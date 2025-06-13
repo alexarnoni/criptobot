@@ -1,0 +1,37 @@
+# Ambiente virtual
+.venv/
+venv/
+ENV/
+env/
+
+# Configuração local
+*.env
+*.env.*
+
+# Cache e logs
+__pycache__/
+*.py[cod]
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+
+# Cache do projeto
+cache_alertas.json
+user_store.json
+
+# Dados temporários ou sensíveis
+*.json
+*.csv
+*.xlsx
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db

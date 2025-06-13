@@ -92,6 +92,35 @@ def processar_mensagem(chat_id, text):
             for bloco in blocos:
                 enviar_alerta(chat_id, bloco)
 
+        elif text == "/scan":
+            moedas = listar_moedas(chat_id)
+            if not moedas:
+                enviar_alerta(chat_id, "📭 Você ainda não adicionou nenhuma moeda. Use /add <sigla>")
+                return
+
+            from crypto_data import obter_historico_preco
+            from analysis import analisar_variacoes
+
+            INTERVALO = "1h"
+            QUANTIDADE = 48
+
+            for moeda in moedas:
+                try:
+                    df = obter_historico_preco(moeda, quantidade=QUANTIDADE, intervalo=INTERVALO)
+                    resultado = analisar_variacoes(df, moeda)
+
+                    mensagem = (
+                        f"🔍 *Scan manual: {moeda.upper()}*\n"
+                        f"💵 Preço atual: ${resultado['preco_hoje']}\n"
+                        f"📈 Variação: {resultado['retorno_hoje']}%\n"
+                        f"📉 Acumulado período: {resultado['retorno_30d']}%\n"
+                        f"\n" + "\n".join(f"🔔 *{a}*" for a in resultado["alertas"])
+                    )
+                    enviar_alerta(chat_id, mensagem)
+
+                except Exception as e:
+                    enviar_alerta(chat_id, f"❌ Erro ao escanear {moeda}: {e}")
+
         else:
             enviar_alerta(chat_id, "🤖 Comando não reconhecido. Use /listar ou /ajuda")
 

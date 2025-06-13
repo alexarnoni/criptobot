@@ -1,20 +1,22 @@
-# telegram_bot.py
 import os
 import requests
+import logging
+import time
 from dotenv import load_dotenv
 from user_store import registrar_usuario, adicionar_moeda, remover_moeda, listar_moedas
 from moedas_disponiveis import get_moedas_binance, formatar_lista_moedas, obter_nome_completo
-import time
+
+# Setup do log
+logging.basicConfig(filename='telegram.log', level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
 
-# moedas mais populares primeiro
 PRIORITARIAS = ["btc", "eth", "usdt", "bnb", "sol", "xrp", "ada", "doge"]
 MOEDAS_VALIDAS = get_moedas_binance()
-MOEDAS_FILTRADAS = [m for m in MOEDAS_VALIDAS if m in PRIORITARIAS or len(m) <= 5]  # filtro básico por nome curto/popular
+MOEDAS_FILTRADAS = [m for m in MOEDAS_VALIDAS if m in PRIORITARIAS or len(m) <= 5]
 MOEDAS_ORDENADAS = sorted(set(PRIORITARIAS + MOEDAS_FILTRADAS), key=lambda x: (x not in PRIORITARIAS, x))
 
 def enviar_alerta(chat_id: str, mensagem: str):
@@ -27,11 +29,13 @@ def enviar_alerta(chat_id: str, mensagem: str):
         }
         response = requests.post(url, json=payload)
         response.raise_for_status()
+        logging.info(f"Mensagem enviada para {chat_id}: {mensagem[:60]}...")
     except Exception as e:
-        print(f"Erro ao enviar mensagem: {e}")
+        logging.error(f"Erro ao enviar mensagem para {chat_id}: {e}")
 
 def processar_mensagem(chat_id, text):
     text = text.strip().lower()
+    logging.info(f"Recebido de {chat_id}: {text}")
 
     try:
         if text == "/start":
@@ -92,6 +96,7 @@ def processar_mensagem(chat_id, text):
             enviar_alerta(chat_id, "🤖 Comando não reconhecido. Use /listar ou /ajuda")
 
     except Exception as e:
+        logging.error(f"Erro ao processar mensagem de {chat_id}: {e}")
         enviar_alerta(chat_id, f"❌ Erro ao processar comando: {e}")
 
 if __name__ == "__main__":

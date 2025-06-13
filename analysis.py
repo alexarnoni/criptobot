@@ -1,7 +1,13 @@
 import pandas as pd
+import logging
+
+# Configura o logger
+logger = logging.getLogger(__name__)
+
 
 def analisar_variacoes(df: pd.DataFrame, moeda: str):
     if len(df) < 20:
+        logger.warning(f"[{moeda.upper()}] Dados insuficientes para análise.")
         return {"moeda": moeda, "erro": "Dados insuficientes"}
 
     preco_hoje = df["price"].iloc[-1]
@@ -57,6 +63,9 @@ def analisar_variacoes(df: pd.DataFrame, moeda: str):
     if vol_med > 0 and vol_atual < vol_med * 0.5:
         alerta.append("💤 Baixa volatilidade (pode antecipar movimento forte)")
 
+    logger.info(
+        f"[{moeda.upper()}] Alerta(s) gerado(s): {len(alerta)} | Retorno hoje: {retorno_hoje:.2f}% | z={z_score:.2f}")
+
     return {
         "moeda": moeda,
         "preco_hoje": round(preco_hoje, 2),
@@ -67,9 +76,12 @@ def analisar_variacoes(df: pd.DataFrame, moeda: str):
         "alertas": alerta or ["Sem sinais relevantes hoje"]
     }
 
-# Teste
+
 if __name__ == "__main__":
     from crypto_data import obter_historico_preco
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
     df = obter_historico_preco("solana", quantidade=100, intervalo="1h")
     resultado = analisar_variacoes(df, "solana")
     print(resultado)

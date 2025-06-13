@@ -6,25 +6,35 @@ import logging
 # Configuração do logger
 logger = logging.getLogger(__name__)
 
-# Mapeamento de nomes amigáveis para símbolos reais da Binance
-MOEDA_TO_SYMBOL = {
-    "solana": "SOLUSDT",
-    "bitcoin": "BTCUSDT",
-    "ethereum": "ETHUSDT"
-    # Você pode expandir essa lista conforme necessário
-}
+def gerar_mapeamento_siglas_para_usdt():
+    """Cria o mapeamento dinâmico sigla->par USDT (ex: btc->BTCUSDT)"""
+    url = "https://api.binance.com/api/v3/exchangeInfo"
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        logger.error("Erro ao buscar symbols da Binance")
+        raise Exception("Erro ao buscar symbols da Binance")
+    data = resp.json()
+    symbols = data.get("symbols", [])
+    mapping = {}
+    for s in symbols:
+        if s["quoteAsset"].lower() == "usdt":
+            mapping[s["baseAsset"].lower()] = s["symbol"]
+    return mapping
+
+# Gera o dicionário automaticamente ao importar o módulo!
+MOEDA_TO_SYMBOL = gerar_mapeamento_siglas_para_usdt()
 
 def obter_historico_preco(moeda: str, quantidade: int = 30, intervalo: str = "1d"):
     """
     Busca histórico de preços da Binance para uma moeda em um dado intervalo.
 
-    :param moeda: Nome da moeda (ex: 'solana', 'bitcoin')
+    :param moeda: Sigla (ex: 'btc', 'eth', 'sol')
     :param quantidade: Quantidade de candles
     :param intervalo: Intervalo (ex: '1d', '1h', '15m', '5m')
     """
     symbol = MOEDA_TO_SYMBOL.get(moeda.lower())
     if not symbol:
-        logger.error(f"Moeda '{moeda}' não mapeada.")
+        logger.error(f"Moeda '{moeda}' não mapeada para símbolo Binance.")
         raise ValueError(f"Moeda '{moeda}' não mapeada para símbolo Binance.")
 
     url = "https://api.binance.com/api/v3/klines"
@@ -56,5 +66,5 @@ def obter_historico_preco(moeda: str, quantidade: int = 30, intervalo: str = "1d
 if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.INFO)
-    df = obter_historico_preco("solana", quantidade=48, intervalo="1h")
+    df = obter_historico_preco("sol", quantidade=48, intervalo="1h")
     print(df.tail())
